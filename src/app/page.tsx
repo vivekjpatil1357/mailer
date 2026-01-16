@@ -1,28 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useState, KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Send, Mail, Building, AlertCircle, CheckCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Send, Mail, Building, AlertCircle, CheckCircle, X } from "lucide-react";
 
 export default function Home() {
-  const [emails, setEmails] = useState("");
+  const [emails, setEmails] = useState<string[]>([]);
+  const [inputValue, setInputValue] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === ' ' || e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const newEmail = inputValue.trim();
+      if (newEmail && !emails.includes(newEmail) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+        setEmails([...emails, newEmail]);
+        setInputValue("");
+      }
+    }
+  };
+
+  const removeEmail = (emailToRemove: string) => {
+    setEmails(emails.filter(email => email !== emailToRemove));
+  };
 
   const handleSend = async () => {
     setIsLoading(true);
     setStatus(null);
 
-    const emailList = emails
-      .split(/[\n,;]/)
-      .map(email => email.trim())
-      .filter(email => email.length > 0 && email.includes('@'));
-
-    if (emailList.length === 0) {
+    if (emails.length === 0) {
       setStatus({ type: 'error', message: 'Please enter at least one valid email address.' });
       setIsLoading(false);
       return;
@@ -40,14 +51,14 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ emails: emailList, companyName }),
+        body: JSON.stringify({ emails: emails, companyName }),
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        setStatus({ type: 'success', message: `Emails sent successfully to ${emailList.length} recipients!` });
-        setEmails("");
+        setStatus({ type: 'success', message: `Emails sent successfully to ${emails.length} recipients!` });
+        setEmails([]);
         setCompanyName("");
       } else {
         setStatus({ type: 'error', message: result.message || 'An unknown error occurred.' });
@@ -95,7 +106,7 @@ export default function Home() {
                 </label>
                 <Input
                   id="companyName"
-                  placeholder="e.g., TECH RMDSTIC"
+                  placeholder="e.g., Veltos AI"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                 />
@@ -105,13 +116,24 @@ export default function Home() {
                   <Mail className="w-5 h-5" />
                   Recipient Emails
                 </label>
-                <Textarea
-                  id="emails"
-                  placeholder="example1@email.com, example2@email.com"
-                  value={emails}
-                  onChange={(e) => setEmails(e.target.value)}
-                  className="min-h-[150px] font-mono text-sm resize-y"
-                />
+                <div className="flex flex-wrap gap-2 p-2 border border-gray-200 dark:border-gray-700 rounded-md min-h-10">
+                  {emails.map(email => (
+                    <Badge key={email} variant="secondary" className="flex items-center gap-1">
+                      {email}
+                      <button onClick={() => removeEmail(email)} className="rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 p-0.5">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                  <Input
+                    id="emails"
+                    placeholder="Type an email and press space..."
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="flex-1 border-none focus:ring-0 focus:outline-none p-0 m-0 h-auto bg-transparent"
+                  />
+                </div>
               </div>
               <Button 
                 onClick={handleSend} 
