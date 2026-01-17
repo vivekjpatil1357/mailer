@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       const mailOptions = {
         from: process.env.EMAIL_FROM,
         to: email,
-        subject: `Sponsorship Opportunity at ELVION Hackathon at RMD Sinhgad Technical Institute for ${companyName}`,
+        subject: `Sponsorship Invitation - ELVION Hackathon at RMD Sinhgad Technical Institute for ${companyName}`,
         html: htmlContent,
         cc: ['vivekjpatil1357@gmail.com']
       };
