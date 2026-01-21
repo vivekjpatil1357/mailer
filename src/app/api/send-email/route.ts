@@ -4,12 +4,14 @@ import fs from "fs";
 import path from "path";
 
 export async function POST(req: NextRequest) {
-  const { emails, companyName } = await req.json();
+  const { emails, companyName, body } = await req.json();
 
   if (!emails || !Array.isArray(emails) || emails.length === 0 || !companyName) {
     return NextResponse.json({ message: "Missing required fields: emails array and companyName are required." }, { status: 400 });
   }
-
+  if (!body) {
+    return NextResponse.json({ message: "Missing required fields: body is required." }, { status: 400 });
+  }
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: Number(process.env.EMAIL_PORT),
@@ -26,8 +28,8 @@ export async function POST(req: NextRequest) {
     const htmlTemplate = fs.readFileSync(templatePath, 'utf8');
 
     const sendPromises = emails.map(email => {
-      let htmlContent = htmlTemplate.replace(/{{companyName}}/g, companyName);
-
+      let htmlContent = htmlTemplate.replace(/{{body}}/g, body);
+      htmlContent = htmlContent.replace(/{{companyName}}/g, companyName);
       const mailOptions = {
         from: process.env.EMAIL_FROM,
         to: email,
